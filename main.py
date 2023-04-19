@@ -1,12 +1,17 @@
 import streamlit as st
 import pickle
 from datetime import date
+import pandas as pd
+import altair as alt
 
 st.title("MPCEC BR - Modelo Preditivo de Consumo Elétrico Coletivo Brasileiro")
 
 st.write(""" 
-Aqui mostramos uma análise preditiva dos dados com base em um conjunto de dados contendo dados de consumo elétrico do Brasil por estado, mes e ano, tipo de consumo e quantidade de consumidores
-este modelo foi treinado usando um algoritmo de regressão linear para tentar prever o consumo usando as variávies citadas.
+O MPCEC BR - Modelo Preditivo de Consumo Elétrico Coletivo Brasileiro é um aplicativo que utiliza um modelo preditivo para estimar o consumo de energia elétrica coletivo no Brasil, considerando as informações fornecidas pelo usuário. O modelo utiliza um algoritmo de regressão linear para gerar uma previsão de consumo em Megawatts-hora (MWh) para um determinado mês e ano, levando em conta o estado do país e o tipo de consumo (residencial, industrial, comercial ou outros). Além disso, o usuário deve fornecer o número de consumidores na área de interesse.
+
+Para utilizar o aplicativo, preencha o formulário com as informações solicitadas e aguarde a exibição do resultado. O consumo estimado de energia elétrica será calculado automaticamente após a inserção das informações pelo usuário. Lembre-se que o modelo é uma ferramenta para auxiliar na tomada de decisão e pode haver variações em relação ao consumo real.
+
+
 """)
 
 #Código
@@ -50,10 +55,29 @@ mapeamento_consumo = {
     'Total': 1, 'Cativo': 2, 'Residencial': 3, 'Industrial': 4, 'Comercial': 5, 'Outros': 6
 }
 
-ano_mes = st.date_input('Selecione o ano e mês', min_value=date(2004, 1, 1), max_value=date(2050, 12, 31))
-estado = st.selectbox('Estado do Brasil', list(mapeamento_estado.keys()))
-consumo_num = st.selectbox('Tipo de consumo', list(mapeamento_consumo.keys()))
-numero_consumidores = st.number_input('Número de consumidores', value=1)
+ano_mes = st.date_input('Para começar selecione o ano e o mês da previsão', min_value=date(2004, 1, 1), max_value=date(2050, 12, 31))
+estado = st.selectbox('Agora o estado em que deseja tentar prever o consumo', list(mapeamento_estado.keys()))
+st.write(""" 
+### Qual o tipo de consumo que será previsto?
+
+A seguir, apresentamos uma lista explicando os diferentes tipos de consumo de energia elétrica:
+
+Total: Este é o consumo total de energia elétrica em um determinado período de tempo, que pode ser medido em megawatts-hora (MWh) ou quilowatts-hora (kWh). Ele representa a quantidade total de energia elétrica consumida por uma região, país ou até mesmo pelo mundo inteiro.
+
+Cativo: O consumo cativo se refere ao consumo de energia elétrica por parte de consumidores que são obrigados a comprar eletricidade de uma concessionária específica em sua área geográfica, sem ter a opção de escolher o seu fornecedor de energia. Geralmente, ocorre em áreas em que há apenas uma concessionária fornecendo energia elétrica para a região, ou em situações em que as regulamentações impedem a entrada de novos fornecedores no mercado.
+
+Residencial: O consumo residencial de energia elétrica ocorre em residências e lares, onde é utilizada para iluminação, aquecimento, refrigeração, cozimento de alimentos, entre outras atividades domésticas.
+
+Industrial: O consumo industrial de energia elétrica ocorre em fábricas e indústrias, onde é utilizada para alimentar equipamentos, motores e outros processos de produção.
+
+Comercial: O consumo comercial de energia elétrica ocorre em estabelecimentos comerciais, como lojas, escritórios, restaurantes e hotéis. É utilizada para iluminação, climatização, sistemas de segurança, entre outros.
+
+Outros: O consumo de energia elétrica que não se enquadra nas categorias acima é classificado como "outros". Isso inclui o consumo de energia elétrica em instalações públicas, como iluminação de ruas e estradas, sistemas de transporte público e iluminação de monumentos, por exemplo.
+
+""")
+
+consumo_num = st.selectbox('E então, qual o tipo de consumo que será previsto?', list(mapeamento_consumo.keys()))
+numero_consumidores = st.number_input('O número de consumidores é uma informação importante para o cálculo do consumo de energia elétrica estimado pelo MPCEC BR. Embora o número de consumidores não seja o fator mais influente na predição, ele ajuda a tornar a previsão mais precisa. Isso porque o modelo utiliza dados de consumo de energia elétrica coletivo, e não de indivíduos, e um número maior de consumidores pode proporcionar uma melhor estimativa do consumo total. No entanto, é importante ressaltar que a predição por número de consumidores pode variar dependendo das opções selecionadas acima no formulário, como o tipo de consumo, o estado e o mês/ano escolhidos. Por isso, é recomendado que o usuário insira o número mais próximo possível do total de consumidores na área de interesse para obter uma estimativa mais precisa do consumo de energia elétrica.  Lembre-se que o MPCEC BR é uma ferramenta de previsão e, portanto, as estimativas apresentadas podem variar em relação ao consumo real. O objetivo do aplicativo é fornecer informações úteis para a tomada de decisão e planejamento em relação ao consumo de energia elétrica coletivo no Brasil. Espero que ajude! ', value=1)
 
 # Mapear valores selecionados para valores numéricos
 sigla_uf = mapeamento_estado[estado]
@@ -66,121 +90,5 @@ input_data = [[ano, mes, sigla_uf, tipo_consumo, numero_consumidores]]
 prediction = model.predict(input_data)
 
 # Exibir o resultado da previsão
-st.write('A previsão é:', prediction)
-
-# Plotar gráfico interativo
-import pandas as pd
-import altair as alt
-
-# Criar DataFrame com os dados de entrada
-df_input = pd.DataFrame({
-    'Ano': [ano],
-    'Mês': [mes],
-    'Estado': [sigla_uf],
-    'Tipo de Consumo': [tipo_consumo],
-    'Número de Consumidores': [numero_consumidores]
-})
-
-# Plotar gráfico de barras com o valor previsto
-df_output = pd.DataFrame({'Valor Previsto': [prediction[0]]})
-bars = alt.Chart(df_output).mark_bar().encode(y='Valor Previsto')
-text = bars.mark_text(
-    align='center',
-    baseline='bottom',
-    dy=-10
-).encode(text='Valor Previsto')
-chart = (bars + text).properties(title='Valor previsto pelo modelo')
-
-# Plotar gráfico de dispersão com os valores de entrada
-scatter = alt.Chart(df_input).mark_point(size=100, opacity=0.7, color='red').encode(
-    x='Ano:O',
-    y='Número de Consumidores:Q',
-    tooltip=['Ano', 'Mês', 'Estado', 'Tipo de Consumo', 'Número de Consumidores']
-).properties(title='Valores de entrada')
-
-# Combinar os dois gráficos em um único gráfico interativo
-st.altair_chart(chart + scatter, use_container_width=True)
-
-# GRAFICOS
-
-# Usar o modelo para fazer previsões para os próximos 12 meses
-input_data = [[ano, mes, sigla_uf, tipo_consumo, numero_consumidores]]
-df_predictions = pd.DataFrame(columns=['Data', 'Previsão'])
-for i in range(12):
-    mes += 1
-    if mes > 12:
-        ano += 1
-        mes = 1
-    input_data[0][0] = ano
-    input_data[0][1] = mes
-    prediction = model.predict(input_data)[0]
-    df_predictions.loc[i] = [date(ano, mes, 1), prediction]
-
-# Plotar gráfico de linha com as previsões
-line_chart = alt.Chart(df_predictions).mark_line().encode(
-    x='Data:T',
-    y='Previsão:Q',
-    tooltip=['Data', 'Previsão']
-).properties(title='Previsão para os próximos 12 meses')
-
-# Mostrar gráficos na página
-st.altair_chart(chart + scatter + line_chart, use_container_width=True)
-
-st.write(""" 
-Agora vamos para parte mais exploatória dos dados mostrando o conjunto de dados bruto que foi usado para gerar este modelo com alguns gráficos:
-""")
-
-df = pd.read_csv("novos_dados.csv")
-
-#st.dataframe(df.head(10))
-
-st.write(""" 
-### Consumo coletivo ao longo dos anos:
-como pode ver existe uma divisão de temperatura por meses, com janeiro sendo 1 e indo até dezembro que é 12
-""")
-
-# Convertendo a coluna 'ano' para o tipo de dados de data
-df['ano'] = pd.to_datetime(df['ano'], format='%Y')
-
-
-st.write(""" 
-### Grafico de dispersão
-""")
-
-# Criando um gráfico interativo de dispersão com Altair
-scatter_chart = alt.Chart(df).mark_circle().encode(
-    x=alt.X('ano:T', axis=alt.Axis(format='%Y')),
-    y='consumo',
-    color='mes'
-)
-
-# Renderizando o gráfico com Streamlit
-st.altair_chart(scatter_chart, use_container_width=True)
-
-st.write(""" 
-### Grafico de Barras
-""")
-
-# Criando o gráfico
-chart = alt.Chart(df).mark_bar().encode(
-    x=alt.X('ano:T', axis=alt.Axis(format='%Y')),
-    y='consumo',
-    color='mes'
-)
-
-# Mostrando o gráfico no Streamlit
-st.altair_chart(chart, use_container_width=True)
-
-st.write(""" 
-### Grafico de Linha
-Mostra o consumo por mes
-""")
-
-line_chart = alt.Chart(df).mark_line().encode(
-    x='mes',
-    y='consumo',
-    tooltip=['mes', 'consumo']
-).interactive()
-
-# Renderizando o gráfico com Streamlit
-st.altair_chart(line_chart, use_container_width=True)
+st.write('### O consumo total de todo estado de ' + str(estado) + ' do ano ' + str(ano) + ' e mês ' + str(mes) + ' com número de consumidores de ' + str(numero_consumidores) + ' e o tipo de consumo ' + str(consumo_num) + ' em MWh é de:')
+st.write(f"# {prediction[0]:,.0f} MWh")
