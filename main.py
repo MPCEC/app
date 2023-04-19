@@ -3,6 +3,7 @@ import pickle
 from datetime import date
 import pandas as pd
 import altair as alt
+import plotly.express as px
 
 st.title("MPCEC BR - Modelo Preditivo de Consumo Elétrico Coletivo Brasileiro")
 
@@ -55,7 +56,7 @@ mapeamento_consumo = {
     'Total': 1, 'Cativo': 2, 'Residencial': 3, 'Industrial': 4, 'Comercial': 5, 'Outros': 6
 }
 
-ano_mes = st.date_input('Para começar selecione o ano e o mês da previsão', min_value=date(2004, 1, 1), max_value=date(2050, 12, 31))
+ano_mes = st.date_input('Para começar selecione a data da previsão', min_value=date(2004, 1, 1), max_value=date(2050, 12, 31))
 estado = st.selectbox('Agora o estado em que deseja tentar prever o consumo', list(mapeamento_estado.keys()))
 st.write(""" 
 ### Qual o tipo de consumo que será previsto?
@@ -92,3 +93,38 @@ prediction = model.predict(input_data)
 # Exibir o resultado da previsão
 st.write('### O consumo total de todo estado de ' + str(estado) + ' do ano ' + str(ano) + ' e mês ' + str(mes) + ' com número de consumidores de ' + str(numero_consumidores) + ' e o tipo de consumo ' + str(consumo_num) + ' em MWh é de:')
 st.write(f"# {prediction[0]:,.0f} MWh")
+
+st.write(""" 
+
+# Histograma de consumo
+
+Olá, bem-vindo ao nosso aplicativo de histogramas de consumo elétrico! Com essa ferramenta, você poderá visualizar o consumo de energia elétrica em um estado brasileiro em uma data específica.
+
+Para utilizar o aplicativo, basta selecionar a data desejada no menu dropdown de seleção, que vai de janeiro de 2004 até dezembro de 2021, e o estado brasileiro em que você mora em outro menu dropdown.
+
+Após selecionar essas informações, você poderá visualizar o histograma de consumo elétrico do estado selecionado na data escolhida. Isso pode ser útil para acompanhar o consumo de energia em sua região e identificar possíveis picos de consumo.
+
+Aproveite essa ferramenta para se manter informado sobre o consumo de energia elétrica em sua região e contribuir para um uso mais consciente da energia elétrica!
+
+
+""")
+
+# Carrega o dataframe
+df = pd.read_csv("novos_dados.csv")
+
+
+#GRAFICO DE BARRA
+data_inicial = date(2010, 1, 1)
+mes_ano = st.date_input('Selecione a data do histograma', value=data_inicial, min_value=date(2004, 1, 1), max_value=date(2021, 12, 31))
+
+ano = mes_ano.year
+mes = mes_ano.month
+
+estado_uf = st.selectbox('Agora o estado em que deseja ver o consumo', list(mapeamento_estado.keys()))
+sigla_uf = mapeamento_estado[estado_uf]
+
+# Cria o gráfico interativo
+fig = px.histogram(df[(df['ano'] == ano) & (df['mes'] == mes) & (df['sigla_uf'] == sigla_uf)], x="consumo", nbins=30)
+
+# Plota o gráfico interativo
+st.plotly_chart(fig, use_container_width=True)
