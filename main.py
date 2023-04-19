@@ -1,7 +1,6 @@
 import streamlit as st
 import pickle
 from datetime import date
-import matplotlib.pyplot as plt
 
 st.title("MPCEC BR - Modelo Preditivo de Consumo Elétrico Coletivo Brasileiro")
 
