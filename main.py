@@ -112,7 +112,10 @@ Aproveite essa ferramenta para se manter informado sobre o consumo de energia el
 # Carrega o dataframe
 df = pd.read_csv("novos_dados.csv")
 
-#GRAFICO DE LINHA
+# Carrega o dataframe
+df = pd.read_csv("novos_dados.csv")
+
+#GRAFICO DE AREA
 data_inicial = date(2010, 1, 1)
 mes_ano = st.date_input('Selecione a data do histograma', value=data_inicial, min_value=date(2004, 1, 1), max_value=date(2021, 12, 31))
 
@@ -123,9 +126,9 @@ estado_uf = st.selectbox('Selecione o estado:', list(mapeamento_estado.keys()))
 sigla_uf = mapeamento_estado[estado_uf]
 
 df_estado = df[df['sigla_uf'] == sigla_uf]
-fig = px.area(df_estado, x="mes", y="consumo", title=f'Consumo de Energia em {estado_uf} por Mês')
+fig = px.area(df_estado, x="mes", y="consumo", title=f'Consumo de Energia em {estado_uf} por Mês Grafico de área')
 st.plotly_chart(fig, use_container_width=True)
 
-
-
-
+#GRAFICO DE BARRA
+fig = px.bar(df[(df['ano'] == ano) & (df['mes'] == mes) & (df['sigla_uf'] == sigla_uf)], x="consumo", y="mes", title=f'Consumo de Energia em {estado_uf} por Mês Grafico de Barras')
+st.plotly_chart(fig, use_container_width=True)
